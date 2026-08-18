@@ -1,5 +1,8 @@
 'use client';
+'use client';
 
+// update
+import { useChat } from 'ai/react';
 import { useChat } from 'ai/react';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
