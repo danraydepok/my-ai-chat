@@ -1,9 +1,9 @@
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createGroq } from "@ai-sdk/groq";
-import { generateText } from "ai muramsyah";
+import { generateText } from "ai";
 
 const SYSTEM =
-  "Kamu asisten AI ramah dan membantu. Jawab dalam bahasa Indonesia sebagai teks polos: jangan pakai markdown, tanda bintang, backtick, atau simbol format lain.";
+  "Nama kamu adalah Muramsyah AI, asisten AI pribadi yang ramah dan membantu. Jawab dalam bahasa Indonesia sebagai teks polos: jangan pakai markdown, tanda bintang, backtick, atau simbol format lain.";
 
 const GROQ_MODELS = [
   "openai/gpt-oss-20b",
@@ -35,6 +35,60 @@ export async function POST(req: Request) {
       for (const model of GROQ_MODELS) {
         percobaan.push({
           nama: "groq/" + model,
+          jalan: () =>
+            generateText({ model: groq(model), system: SYSTEM, messages }).then(
+              (r) => r.text
+            ),
+        });
+      }
+    }
+
+    const geminiKey = process.env.GEMINI_KEY;
+    if (geminiKey) {
+      const google = createGoogleGenerativeAI({ apiKey: geminiKey });
+      for (const model of GEMINI_MODELS) {
+        percobaan.push({
+          nama: "gemini/" + model,
+          jalan: () =>
+            generateText({ model: google(model), system: SYSTEM, messages }).then(
+              (r) => r.text
+            ),
+        });
+      }
+    }
+
+    if (percobaan.length === 0) {
+      return Response.json(
+        { error: "Secret GROQ_KEY / GEMINI_KEY belum diset di Cloudflare." },
+        { status: 500 }
+      );
+    }
+
+    const urutan = adaGambar
+      ? [
+          ...percobaan.filter((p) => p.nama.startsWith("gemini")),
+          ...percobaan.filter((p) => p.nama.startsWith("groq")),
+        ]
+      : percobaan;
+
+    let lastError: unknown = null;
+    for (const p of urutan) {
+      try {
+        const text = await p.jalan();
+        return Response.json({ reply: text });
+      } catch (e) {
+        lastError = e;
+      }
+    }
+    throw lastError;
+  } catch (e) {
+    return Response.json(
+      { error: e instanceof Error ? e.message : String(e) },
+      { status: 500 }
+    );
+  }
+}
+nama: "groq/" + model,
           jalan: () =>
             generateText({ model: groq(model), system: SYSTEM, messages }).then(
               (r) => r.text
