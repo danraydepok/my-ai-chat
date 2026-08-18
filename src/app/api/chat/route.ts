@@ -12,6 +12,7 @@ const GROQ_MODELS = [
 ];
 
 const GEMINI_MODELS = [
+  "gemini-3.6-flash",
   "gemini-3.5-flash",
   "gemini-2.5-flash",
 ];
@@ -28,9 +29,10 @@ export async function POST(req: Request) {
           { status: 500 }
         );
       }
-      const google = createGoogleGenerativeAI({ apiKey });
 
+      const google = createGoogleGenerativeAI({ apiKey });
       let lastError: unknown = null;
+
       for (const namaModel of GEMINI_MODELS) {
         try {
           const { text } = await generateText({
@@ -43,6 +45,7 @@ export async function POST(req: Request) {
           lastError = e;
         }
       }
+
       throw lastError;
     }
 
@@ -53,9 +56,10 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
-    const groq = createGroq({ apiKey });
 
+    const groq = createGroq({ apiKey });
     let lastError: unknown = null;
+
     for (const namaModel of GROQ_MODELS) {
       try {
         const { text } = await generateText({
@@ -68,6 +72,7 @@ export async function POST(req: Request) {
         lastError = e;
       }
     }
+
     throw lastError;
   } catch (e) {
     return Response.json(
@@ -76,31 +81,3 @@ export async function POST(req: Request) {
     );
   }
 }
-      return Response.json(
-        { error: "Secret GROQ_KEY belum diset di Cloudflare." },
-        { status: 500 }
-      );
-    }
-    const groq = createGroq({ apiKey });
-
-    let lastError: unknown = null;
-    for (const namaModel of GROQ_MODELS) {
-      try {
-        const { text } = await generateText({
-          model: groq(namaModel),
-          system: SYSTEM,
-          messages,
-        });
-        return Response.json({ reply: text });
-      } catch (e) {
-        lastError = e;
-      }
-    }
-    throw lastError;
-  } catch (e) {
-    return Response.json(
-      { error: e instanceof Error ? e.message : String(e) },
-      { status: 500 }
-    );
-  }
-      }
