@@ -1,8 +1,6 @@
 import { createGroq } from "@ai-sdk/groq";
 import { streamText } from "ai";
 
-export const runtime = "edge";
-
 const groq = createGroq({ apiKey: process.env.GROQ_KEY });
 
 export async function POST(req: Request) {
@@ -11,7 +9,8 @@ export async function POST(req: Request) {
 
     const result = streamText({
       model: groq("llama-3.3-70b-versatile"),
-      system: "Kamu asisten AI ramah. Jawab singkat dan membantu dalam bahasa Indonesia.",
+      system:
+        "Kamu asisten AI ramah. Jawab singkat dan membantu dalam bahasa Indonesia.",
       messages,
     });
 
