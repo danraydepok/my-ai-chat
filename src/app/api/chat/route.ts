@@ -3,7 +3,9 @@ import { createGroq } from "@ai-sdk/groq";
 import { generateText } from "ai";
 
 const SYSTEM =
-  "Nama kamu adalah Muramsyah AI, asisten AI pribadi yang ramah dan membantu. Jawab dalam bahasa Indonesia sebagai teks polos: jangan pakai markdown, tanda bintang, backtick, atau simbol format lain.";
+  "Nama kamu Muramsyah AI, asisten pribadi ramah. " +
+  "Jawab dalam bahasa Indonesia dengan teks polos, " +
+  "tanpa markdown, tanda bintang, atau backtick.";
 
 const GROQ_MODELS = [
   "openai/gpt-oss-20b",
@@ -21,123 +23,77 @@ export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
-    const adaGambar = messages.some(
-      (m: any) =>
-        Array.isArray(m.content) &&
-        m.content.some((p: any) => p && p.type === "image")
+    const adaGambar = messages.some((m: any) =>
+      Array.isArray(m.content)
+        ? m.content.some(
+            (p: any) => p && p.type === "image"
+          )
+        : false
     );
-
-    const percobaan: Array<{ nama: string; jalan: () => Promise<string> }> = [];
 
     const groqKey = process.env.GROQ_KEY;
-    if (groqKey) {
-      const groq = createGroq({ apiKey: groqKey });
-      for (const model of GROQ_MODELS) {
-        percobaan.push({
-          nama: "groq/" + model,
-          jalan: () =>
-            generateText({ model: groq(model), system: SYSTEM, messages }).then(
-              (r) => r.text
-            ),
-        });
-      }
-    }
-
     const geminiKey = process.env.GEMINI_KEY;
-    if (geminiKey) {
-      const google = createGoogleGenerativeAI({ apiKey: geminiKey });
-      for (const model of GEMINI_MODELS) {
-        percobaan.push({
-          nama: "gemini/" + model,
-          jalan: () =>
-            generateText({ model: google(model), system: SYSTEM, messages }).then(
-              (r) => r.text
-            ),
-        });
-      }
-    }
 
-    if (percobaan.length === 0) {
+    if (!groqKey && !geminiKey) {
       return Response.json(
-        { error: "Secret GROQ_KEY / GEMINI_KEY belum diset di Cloudflare." },
+        {
+          error:
+            "Secret GROQ_KEY / GEMINI_KEY belum diset.",
+        },
         { status: 500 }
       );
     }
 
-    const urutan = adaGambar
-      ? [
-          ...percobaan.filter((p) => p.nama.startsWith("gemini")),
-          ...percobaan.filter((p) => p.nama.startsWith("groq")),
-        ]
-      : percobaan;
+    const daftar: string[] = [];
+    if (groqKey) daftar.push("groq");
+    if (geminiKey) daftar.push("gemini");
+    if (adaGambar) daftar.reverse();
 
     let lastError: unknown = null;
-    for (const p of urutan) {
-      try {
-        const text = await p.jalan();
-        return Response.json({ reply: text });
-      } catch (e) {
-        lastError = e;
+
+    for (const mesin of daftar) {
+      if (mesin === "groq" && groqKey) {
+        const groq = createGroq({ apiKey: groqKey });
+        for (const model of GROQ_MODELS) {
+          try {
+            const r = await generateText({
+              model: groq(model),
+              system: SYSTEM,
+              messages,
+            });
+            return Response.json({ reply: r.text });
+          } catch (e) {
+            lastError = e;
+          }
+        }
+      }
+
+      if (mesin === "gemini" && geminiKey) {
+        const google = createGoogleGenerativeAI({
+          apiKey: geminiKey,
+        });
+        for (const model of GEMINI_MODELS) {
+          try {
+            const r = await generateText({
+              model: google(model),
+              system: SYSTEM,
+              messages,
+            });
+            return Response.json({ reply: r.text });
+          } catch (e) {
+            lastError = e;
+          }
+        }
       }
     }
+
     throw lastError;
   } catch (e) {
     return Response.json(
-      { error: e instanceof Error ? e.message : String(e) },
-      { status: 500 }
-    );
-  }
-}
-nama: "groq/" + model,
-          jalan: () =>
-            generateText({ model: groq(model), system: SYSTEM, messages }).then(
-              (r) => r.text
-            ),
-        });
-      }
-    }
-
-    const geminiKey = process.env.GEMINI_KEY;
-    if (geminiKey) {
-      const google = createGoogleGenerativeAI({ apiKey: geminiKey });
-      for (const model of GEMINI_MODELS) {
-        percobaan.push({
-          nama: "gemini/" + model,
-          jalan: () =>
-            generateText({ model: google(model), system: SYSTEM, messages }).then(
-              (r) => r.text
-            ),
-        });
-      }
-    }
-
-    if (percobaan.length === 0) {
-      return Response.json(
-        { error: "Secret GROQ_KEY / GEMINI_KEY belum diset di Cloudflare." },
-        { status: 500 }
-      );
-    }
-
-    const urutan = adaGambar
-      ? [
-          ...percobaan.filter((p) => p.nama.startsWith("gemini")),
-          ...percobaan.filter((p) => p.nama.startsWith("groq")),
-        ]
-      : percobaan;
-
-    let lastError: unknown = null;
-    for (const p of urutan) {
-      try {
-        const text = await p.jalan();
-        return Response.json({ reply: text });
-      } catch (e) {
-        lastError = e;
-      }
-    }
-    throw lastError;
-  } catch (e) {
-    return Response.json(
-      { error: e instanceof Error ? e.message : String(e) },
+      {
+        error:
+          e instanceof Error ? e.message : String(e),
+      },
       { status: 500 }
     );
   }
