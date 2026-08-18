@@ -1,8 +1,5 @@
 'use client';
-'use client';
 
-// update
-import { useChat } from 'ai/react';
 import { useChat } from 'ai/react';
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
@@ -26,7 +23,6 @@ export default function Chat() {
       <header className="mb-4">
         <h1 className="text-2xl font-bold">My AI Chat</h1>
         <p className="text-sm text-gray-600">Groq + Gemini</p>
-
         <select
           value={selectedModel}
           onChange={(e) => setSelectedModel(e.target.value)}
@@ -46,14 +42,11 @@ export default function Chat() {
             Mulai chat dengan AI...
           </div>
         )}
-
         {messages.map((m) => (
           <div
             key={m.id}
             className={`p-3 rounded-lg ${
-              m.role === 'user'
-                ? 'bg-blue-100 ml-10'
-                : 'bg-gray-100 mr-10'
+              m.role === 'user' ? 'bg-blue-100 ml-10' : 'bg-gray-100 mr-10'
             }`}
           >
             <div className="text-xs font-semibold mb-1">
@@ -64,7 +57,6 @@ export default function Chat() {
             </div>
           </div>
         ))}
-
         {isLoading && (
           <div className="text-gray-500 text-sm">AI sedang menulis...</div>
         )}
