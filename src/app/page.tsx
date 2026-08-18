@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 type Msg = { role: "user" | "assistant"; content: string };
+type Provider = "groq" | "gemini";
 
 const contoh = [
   "Halo, perkenalkan dirimu",
@@ -15,6 +16,7 @@ export default function Page() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [provider, setProvider] = useState<Provider>("groq");
   const bawahRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export default function Page() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: baru }),
+        body: JSON.stringify({ messages: baru, provider }),
       });
       const data = await res.json();
       if (!res.ok || data.error) {
@@ -57,6 +59,21 @@ export default function Page() {
         <div>
           <h1 className="font-semibold leading-tight">My AI Chat</h1>
           <p className="text-xs text-emerald-400">● Online</p>
+        </div>
+        <div className="ml-auto flex rounded-full border border-white/10 bg-white/10 p-1 text-xs">
+          {(["groq", "gemini"] as Provider[]).map((p) => (
+            <button
+              key={p}
+              onClick={() => setProvider(p)}
+              className={`rounded-full px-3 py-1 font-semibold capitalize ${
+                provider === p
+                  ? "bg-gradient-to-r from-indigo-500 to-fuchsia-500"
+                  : "text-white/60"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
         </div>
       </header>
 
