@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
 
 type Lampiran = {
   name: string;
@@ -22,7 +22,7 @@ const contoh = [
   "Jelaskan AI secara sederhana",
 ];
 
-const MAKS_FILE = 10 * 1024 * 1024;
+const MAKS_FILE = 4 * 1024 * 1024;
 const EKSTENSI_TEKS =
   /\.(txt|md|csv|json|js|jsx|ts|tsx|html|css|xml|yml|yaml|py|java|c|cpp|h|sh|sql|log|ini|env)$/i;
 
@@ -79,7 +79,7 @@ export default function Page() {
     return { name: f.name, type: f.type, size: f.size };
   }
 
-  async function onPilihFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function onPilihFile(e: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     try {
@@ -158,7 +158,7 @@ export default function Page() {
           🤖
         </div>
         <div>
-          <h1 className="font-semibold leading-tight">My AI Chat</h1>
+          <h1 className="font-semibold leading-tight">Muramsyah AI</h1>
           <p className="text-xs text-emerald-400">● Online · Groq + Gemini otomatis</p>
         </div>
       </header>
@@ -166,8 +166,8 @@ export default function Page() {
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-6">
         {messages.length === 0 && !isLoading && (
           <div className="mx-auto mt-16 max-w-sm rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur">
-            <div className="text-4xl">✨</div>
-            <h2 className="mt-3 font-semibold">Mulai Percakapan</h2>
+            <div className="text-4xl">👋</div>
+            <h2 className="mt-3 font-semibold">Halo, aku Muramsyah</h2>
             <p className="mt-1 text-sm text-white/60">
               Ketik pesan, atau lampirkan foto/file lewat tombol 📎.
             </p>
@@ -281,8 +281,20 @@ export default function Page() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Tulis pesan..."
+          placeholder="Tulis pesan ke Muramsyah..."
           className="flex-1 rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm outline-none placeholder:text-white/40 focus:border-indigo-400"
+        />
+        <button
+          disabled={isLoading || (!input.trim() && lampiran.length === 0)}
+          className="rounded-full bg-gradient-to-r from-indigo-500 to-fuchsia-500 px-5 py-2.5 text-sm font-semibold disabled:opacity-40"
+        >
+          Kirim
+        </button>
+      </form>
+    </main>
+  );
+              }
+m outline-none placeholder:text-white/40 focus:border-indigo-400"
         />
         <button
           disabled={isLoading || (!input.trim() && lampiran.length === 0)}
