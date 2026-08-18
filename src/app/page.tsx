@@ -299,7 +299,7 @@ export default function Page() {
             Muramsyah AI
           </h1>
           <p className="text-xs text-emerald-400">
-            ● Online · Groq + Gemini otomatis
+            ● Online•
           </p>
         </div>
       </header>
