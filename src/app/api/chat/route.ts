@@ -1,21 +1,32 @@
 import { createGroq } from "@ai-sdk/groq";
-import { streamText } from "ai";
-
-const groq = createGroq({ apiKey: process.env.GROQ_KEY });
+import { generateText } from "ai";
 
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
 
-    const result = streamText({
+    const apiKey = process.env.GROQ_KEY || process.env.GROQ_API_KEY;
+    if (!apiKey) {
+      return Response.json(
+        { error: "Secret GROQ_KEY belum diset di Cloudflare." },
+        { status: 500 }
+      );
+    }
+
+    const groq = createGroq({ apiKey });
+
+    const { text } = await generateText({
       model: groq("llama-3.3-70b-versatile"),
       system:
         "Kamu asisten AI ramah. Jawab singkat dan membantu dalam bahasa Indonesia.",
       messages,
     });
 
-    return result.toDataStreamResponse();
-  } catch (e) {
-    return Response.json({ error: String(e) }, { status: 500 });
+    return Response.json({ reply: text });
+  } catch (e: any) {
+    return Response.json(
+      { error: e?.message ?? String(e) },
+      { status: 500 }
+    );
   }
 }
