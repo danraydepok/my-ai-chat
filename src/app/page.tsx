@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { useChat } from "ai/react";
+import { useEffect, useRef, useState } from "react";
+
+type Msg = { role: "user" | "assistant"; content: string };
 
 const contoh = [
   "Halo, perkenalkan dirimu",
@@ -10,12 +11,42 @@ const contoh = [
 ];
 
 export default function Page() {
-  const { messages, input, handleInputChange, handleSubmit, isLoading, error, append } = useChat();
+  const [messages, setMessages] = useState<Msg[]>([]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
   const bawahRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     bawahRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isLoading]);
+
+  async function kirim(teks: string) {
+    const pesan = teks.trim();
+    if (!pesan || isLoading) return;
+    setError("");
+    setInput("");
+    const baru: Msg[] = [...messages, { role: "user", content: pesan }];
+    setMessages(baru);
+    setIsLoading(true);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: baru }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setError(data.error || `Error ${res.status}`);
+      } else {
+        setMessages([...baru, { role: "assistant", content: data.reply }]);
+      }
+    } catch (e) {
+      setError("Tidak bisa terhubung ke server: " + String(e));
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
     <main className="flex h-screen flex-col bg-gradient-to-br from-slate-950 via-indigo-950 to-black text-white">
@@ -34,12 +65,14 @@ export default function Page() {
           <div className="mx-auto mt-16 max-w-sm rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur">
             <div className="text-4xl">✨</div>
             <h2 className="mt-3 font-semibold">Mulai Percakapan</h2>
-            <p className="mt-1 text-sm text-white/60">Kirim pesan atau coba contoh di bawah.</p>
+            <p className="mt-1 text-sm text-white/60">
+              Kirim pesan atau coba contoh di bawah.
+            </p>
             <div className="mt-4 flex flex-col gap-2">
               {contoh.map((c) => (
                 <button
                   key={c}
-                  onClick={() => append({ role: "user", content: c })}
+                  onClick={() => kirim(c)}
                   className="rounded-full border border-white/15 bg-white/10 px-4 py-2 text-sm hover:bg-white/20"
                 >
                   {c}
@@ -49,8 +82,11 @@ export default function Page() {
           </div>
         )}
 
-        {messages.map((m) => (
-          <div key={m.id} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+        {messages.map((m, i) => (
+          <div
+            key={i}
+            className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}
+          >
             <div
               className={`max-w-[80%] whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm leading-relaxed shadow ${
                 m.role === "user"
@@ -75,19 +111,22 @@ export default function Page() {
 
         {error && (
           <div className="rounded-xl border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-            ⚠️ Gagal mendapat balasan: {error.message}
+            ⚠️ {error}
           </div>
         )}
         <div ref={bawahRef} />
       </div>
 
       <form
-        onSubmit={handleSubmit}
+        onSubmit={(e) => {
+          e.preventDefault();
+          kirim(input);
+        }}
         className="flex items-center gap-2 border-t border-white/10 bg-white/5 px-4 py-3 backdrop-blur"
       >
         <input
           value={input}
-          onChange={handleInputChange}
+          onChange={(e) => setInput(e.target.value)}
           placeholder="Tulis pesan..."
           className="flex-1 rounded-full border border-white/10 bg-white/10 px-4 py-2.5 text-sm outline-none placeholder:text-white/40 focus:border-indigo-400"
         />
