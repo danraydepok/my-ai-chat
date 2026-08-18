@@ -1,27 +1,22 @@
-import { groq } from '@ai-sdk/groq';
-import { google } from '@ai-sdk/google';
-import { streamText } from 'ai';
+import { createGroq } from "@ai-sdk/groq";
+import { streamText } from "ai";
 
-export const maxDuration = 30;
+export const runtime = "edge";
+
+const groq = createGroq({ apiKey: process.env.GROQ_KEY });
 
 export async function POST(req: Request) {
-  const { messages, model } = await req.json();
+  try {
+    const { messages } = await req.json();
 
-  let selectedModel;
+    const result = streamText({
+      model: groq("llama-3.3-70b-versatile"),
+      system: "Kamu asisten AI ramah. Jawab singkat dan membantu dalam bahasa Indonesia.",
+      messages,
+    });
 
-  if (model?.startsWith('gemini')) {
-    selectedModel = google(model);
-  } else {
-    selectedModel = groq(model || 'llama-3.3-70b-versatile');
+    return result.toDataStreamResponse();
+  } catch (e) {
+    return Response.json({ error: String(e) }, { status: 500 });
   }
-
-  const result = streamText({
-    model: selectedModel,
-    messages,
-    system: `Kamu adalah asisten AI yang pintar, jujur, dan helpful. 
-Jawab dalam bahasa yang sama dengan user. 
-Kamu mirip Grok — langsung, jelas, dan bisa membahas topik apa saja.`,
-  });
-
-  return result.toDataStreamResponse();
 }
